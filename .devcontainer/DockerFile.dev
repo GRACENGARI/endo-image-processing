@@ -1,0 +1,55 @@
+# .devcontainer/Dockerfile.dev
+FROM python:3.9-slim
+
+# Prevent Python from writing pyc files and from buffering stdout/stderr
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# System dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
+# Install Python packages for development
+RUN pip install --no-cache-dir \
+    black \
+    pylint \
+    pytest \
+    pytest-cov \
+    ipykernel \
+    notebook \
+    scikit-learn \
+    pandas \
+    numpy \
+    matplotlib \
+    seaborn \
+    flask \
+    flask-wtf \
+    flask-sqlalchemy
+
+# Install Azure CLI
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+# Set working directory
+WORKDIR /workspace
+
+# Switch to non-root user
+USER $USERNAME
+
+# Keep container running
+CMD ["sleep", "infinity"]
